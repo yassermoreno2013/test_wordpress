@@ -2,10 +2,14 @@
 #* wait until efs mount is finished
 sleep 2m
 #* update the instnce
-sudo yum update -y
-sudo yum install git -y 
+sudo apt-get update
+sudo apt install git 
 #* install the efs client 
-sudo yum install -y amazon-efs-utils
+sudo apt-get -y install git binutils
+sudo git clone https://github.com/aws/efs-utils
+cd efs-utils
+sudo ./build-deb.sh
+sudo apt-get -y install ./build/amazon-efs-utils*deb
 #* make the target mount
 sudo mkdir /efs
 #* mount the efs
@@ -13,22 +17,25 @@ sudo mount -t efs -o tls ${efs_id}:/ /efs
 #* insure if the instance got rebooted, the instance will remount  efs 
 echo '${efs_id} ${efs_mount_id} /efs _netdev,tls,accesspoint=${efs_access_point_id} 0 0' >> /etc/fstab
 #* install docker
-sudo yum install -y docker
+sudo apt install docker.io -y
 #* let it be run without sudo
-sudo usermod -a -G docker ec2-user
+sudo usermod -a -G docker ubuntu
 #* start docker engine
 sudo service docker start
-sudo chkconfig docker on
+sudo update-rc.d docker
 #* install docker-compose
-sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-`uname -s`-`uname -m` | sudo tee /usr/local/bin/docker-compose > /dev/null
+sudo curl -L https://github.com/docker/compose/releases/download/1.26.0/docker-compose-`uname -s`-`uname -m` | sudo tee /usr/local/bin/docker-compose > /dev/null
 #* make it executable
 sudo chmod +x /usr/local/bin/docker-compose
 #* link docker-compose with bin folder so it can be called globally
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 #* give it permission to work without sudo
-sudo usermod -a -G docker-compose ec2-user
+sudo usermod -a -G docker-compose ubuntu
 #* make folders that docker-compose.yaml needs for volumes
 sudo mkdir /efs/db /efs/wordpress
 #* run docker-compose.yaml
-sudo git clone https://github.com/imohd23/aws_TerraPress.git /home/ec2-user/aws_TerraPress
-sudo docker-compose -f /home/ec2-user/aws_TerraPress/docker-compose.yaml up --build -d
+sudo mkdir /home/ubuntu/aws_TerraPress
+cd /home/ubuntu/aws_TerraPress
+sudo git clone https://github.com/imohd23/aws_TerraPress.git
+sed -i "7d" /home/ubuntu/aws_TerraPress/aws_TerraPress/nginx/Dockerfile 
+sudo docker-compose -f /home/ubuntu/aws_TerraPress/aws_TerraPress/docker-compose.yaml up --build -d
