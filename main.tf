@@ -8,7 +8,7 @@ module "vpc" {
   name = "${var.vpc_name}example_1"
   cidr = "10.0.0.0/16"
 
-  azs                  = ["us-east-2a", "us-east-2b"]
+  azs                  = ["us-east-2a", "us-east-1b"]
   private_subnets      = ["10.0.1.0/24"]
   public_subnets       = ["10.0.101.0/24", "10.0.102.0/24"]
   enable_dns_hostnames = true
@@ -63,7 +63,7 @@ module "efs_sg" {
   computed_ingress_with_source_security_group_id = [
     {
       rule                     = "nfs-tcp"
-      source_security_group_id = module.instance_sg.this_security_group_id
+      source_security_group_id = module.instance_sg.security_group_id
     }
   ]
   egress_with_cidr_blocks = [
@@ -90,7 +90,7 @@ resource "aws_efs_file_system" "efs" {
 resource "aws_efs_mount_target" "efs_mount" {
   file_system_id  = aws_efs_file_system.efs.id
   subnet_id       = module.vpc.public_subnets[0]
-  security_groups = [module.efs_sg.this_security_group_id]
+  security_groups = [module.efs_sg.security_group_id]
 }
 
 resource "aws_efs_access_point" "efs_access_point" {
@@ -119,7 +119,7 @@ module "auto_scaling" {
 
   image_id        = var.instance_ami
   instance_type   = var.instance_type
-  security_groups = [module.instance_sg.this_security_group_id]
+  security_groups = [module.instance_sg.security_group_id]
 
   ebs_block_device = [
     {
@@ -159,7 +159,7 @@ module "elb_http" {
   name = "elb-example"
 
   subnets         = [module.vpc.public_subnets[0], module.vpc.public_subnets[1]]
-  security_groups = [module.instance_sg.this_security_group_id]
+  security_groups = [module.instance_sg.security_group_id]
   internal        = false
 
   listener = [
