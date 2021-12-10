@@ -34,7 +34,6 @@ sudo usermod -a -G docker-compose ubuntu
 #* make folders that docker-compose.yaml needs for volumes
 sudo mkdir /efs/db /efs/wordpress
 #* run docker-compose.yaml
-sudo mkdir /home/ubuntu/aws_TerraPress
-cd /home/ubuntu/aws_TerraPress
+cd /home/ubuntu/
 sudo git clone https://github.com/yassermoreno2013/aws_terra_worpress.git
-sudo docker-compose -f /home/ubuntu/aws_terra_worpress/aws_terra_worpress/docker-compose.yaml up --build -d
+sudo docker-compose -f /home/ubuntu/aws_terra_worpress/docker-compose.yaml up --build -d
