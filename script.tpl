@@ -37,5 +37,5 @@ sudo mkdir /efs/db /efs/wordpress
 cd /home/ubuntu/
 #sudo git clone https://github.com/yassermoreno2013/aws_terra_worpress.git
 #sudo docker-compose -f /home/ubuntu/aws_terra_worpress/docker-compose.yml up --build -d
-sudo git clone https://github.com/imohd23/aws_TerraPress.git
+sudo git clone https://github.com/yassermoreno2013/aws_test_2.git
 sudo docker-compose -f /home/ubuntu/aws_TerraPress/docker-compose.yaml up --build -d
