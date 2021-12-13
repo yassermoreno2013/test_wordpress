@@ -1,6 +1,6 @@
 #!/bin/bash
 #* wait until efs mount is finished
-sleep 2m
+#sleep 2m
 #* update the instnce
 sudo apt-get update
 sudo apt install git 
@@ -35,5 +35,7 @@ sudo usermod -a -G docker-compose ubuntu
 sudo mkdir /efs/db /efs/wordpress
 #* run docker-compose.yaml
 cd /home/ubuntu/
-sudo git clone https://github.com/yassermoreno2013/aws_terra_worpress.git
-sudo docker-compose -f /home/ubuntu/aws_terra_worpress/docker-compose.yml up --build -d
+#sudo git clone https://github.com/yassermoreno2013/aws_terra_worpress.git
+#sudo docker-compose -f /home/ubuntu/aws_terra_worpress/docker-compose.yml up --build -d
+sudo git clone https://github.com/imohd23/aws_TerraPress.git
+sudo docker-compose -f /home/ubuntu/aws_TerraPress/docker-compose.yaml up --build -d
