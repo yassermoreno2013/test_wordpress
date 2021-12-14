@@ -112,6 +112,7 @@ data "template_file" "init" {
 }
 
 
+
 module "auto_scaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "~> 3.0"
@@ -119,7 +120,7 @@ module "auto_scaling" {
   name = "${var.vpc_name}auto_scaling"
 
   # Launch configuration
-  lc_name = "${var.vpc_name}auto_scaling_lc"
+  lc_name = "${var.vpc_name}auto_scaling"
 
   image_id        = var.instance_ami
   instance_type   = var.instance_type
@@ -136,7 +137,7 @@ module "auto_scaling" {
 
 
   # Auto scaling group
-  asg_name                  = "${var.vpc_name}auto_scaling_lc"
+  asg_name                  = "${var.vpc_name}auto_scaling"
   vpc_zone_identifier       = [module.vpc.public_subnets[0]]
   health_check_type         = "EC2"
   min_size                  = 1
