@@ -100,18 +100,6 @@ resource "aws_efs_access_point" "efs_access_point" {
 }
 
 
-#* script to setup the instance
-data "template_file" "init" {
-  template = file("script.tpl")
-  vars = {
-    efs_id              = aws_efs_file_system.efs.id
-    efs_mount_id        = aws_efs_mount_target.efs_mount.id
-    efs_access_point_id = aws_efs_access_point.efs_access_point.id
-  }
-    depends_on = [ aws_efs_access_point.efs_access_point ]
-}
-
-
 
 module "auto_scaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
@@ -191,3 +179,16 @@ resource "aws_autoscaling_attachment" "asg_attachment_bar" {
   autoscaling_group_name = module.auto_scaling.this_autoscaling_group_id
   elb                    = module.elb_http.this_elb_id
 }
+
+
+#* script to setup the instance
+data "template_file" "init" {
+  template = file("script.tpl")
+  vars = {
+    efs_id              = aws_efs_file_system.efs.id
+    efs_mount_id        = aws_efs_mount_target.efs_mount.id
+    efs_access_point_id = aws_efs_access_point.efs_access_point.id
+  }
+    depends_on = [ aws_efs_access_point.efs_access_point ]
+}
+
