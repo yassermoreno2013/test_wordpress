@@ -129,7 +129,7 @@ module "auto_scaling" {
   vpc_zone_identifier       = [module.vpc.public_subnets[0]]
   health_check_type         = "EC2"
   min_size                  = 1
-  max_size                  = 1
+  max_size                  = 3
   desired_capacity          = 1
   wait_for_capacity_timeout = 0
   user_data                 = data.template_file.init.rendered
