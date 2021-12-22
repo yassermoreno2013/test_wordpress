@@ -14,6 +14,6 @@
 #   value = module.auto_scaling
 # }
 
-output "elb_link" {
-  value = module.elb_http.this_elb_dns_name
-}
+#output "elb_link" {
+#  value = module.elb_http.this_elb_dns_name
+#}

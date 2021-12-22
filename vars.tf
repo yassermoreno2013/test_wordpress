@@ -8,7 +8,7 @@ variable "cidr_subnet" {
 }
 variable "availability_zone" {
   description = "availability zone to create subnet"
-  default     = "us-east-2a"
+  default     = "us-east-1a"
 }
 variable "public_key_path" {
   description = "Public key path"
@@ -35,6 +35,7 @@ variable "vpc_name" {
   default     = "Terraform_test_"
 }
 variable "instance_count" {
-  description = "The number of instances to be launched"
+  description = "The number of instances to be launched and attach to ELB"
+  type        = string
   default     = 1
 }

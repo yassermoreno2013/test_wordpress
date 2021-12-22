@@ -5,20 +5,22 @@
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "${var.vpc_name}example_1"
+  name = "${var.vpc_name}vpc_wordpress"
   cidr = "10.0.0.0/16"
 
-  azs                  = ["us-east-2a", "us-east-2b"]
-  private_subnets      = ["10.0.1.0/24"]
-  public_subnets       = ["10.0.101.0/24", "10.0.102.0/24"]
-  enable_dns_hostnames = true
+  azs             = ["us-east-2a", "us-east-2b", "us-east-2c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  enable_vpn_gateway = true
 
   tags = {
-    Terraform   = "true"
+    Terraform = "true"
     Environment = "dev"
   }
-
 }
+
 
 
 module "instance_sg" {
@@ -50,6 +52,7 @@ module "instance_sg" {
   ]
 }
 
+
 module "efs_sg" {
   #* EFS Security Group
   
@@ -74,10 +77,12 @@ module "efs_sg" {
   ]
 }
 
+
 resource "aws_key_pair" "ec2key" {
   key_name   = var.public_key_name
   public_key = file(var.public_key_path)
 }
+
 
 resource "aws_efs_file_system" "efs" {
   creation_token = "${var.vpc_name}efs"
@@ -87,11 +92,13 @@ resource "aws_efs_file_system" "efs" {
   }
 }
 
+
 resource "aws_efs_mount_target" "efs_mount" {
   file_system_id  = aws_efs_file_system.efs.id
   subnet_id       = module.vpc.public_subnets[0]
   security_groups = [module.efs_sg.security_group_id]
 }
+
 
 resource "aws_efs_access_point" "efs_access_point" {
   file_system_id = aws_efs_file_system.efs.id  
@@ -101,39 +108,30 @@ resource "aws_efs_access_point" "efs_access_point" {
 
 
 
-module "auto_scaling" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 3.0"
-
-  name = "${var.vpc_name}auto_scaling"
-
-  # Launch configuration
-  lc_name = "${var.vpc_name}auto_scaling"
-
-  image_id        = var.instance_ami
-  instance_type   = var.instance_type
-  security_groups = [module.instance_sg.security_group_id]
-
-  ebs_block_device = [
-    {
-      device_name           = "/dev/xvdz"
-      volume_type           = "gp2"
-      volume_size           = "8"
-      delete_on_termination = true
-    },
-  ]
+resource "aws_launch_configuration" "MyWPLC" {
+  #name                = "${var.vpc_name}auto_scaling"
+  image_id            = var.instance_ami
+  instance_type       = var.instance_type
+  
+  security_groups     = [module.instance_sg.security_group_id]
+  user_data           = data.template_file.init.rendered
+  key_name            = aws_key_pair.ec2key.key_name  
+}
 
 
-  # Auto scaling group
-  asg_name                  = "${var.vpc_name}auto_scaling"
-  vpc_zone_identifier       = [module.vpc.public_subnets[0]]
-  health_check_type         = "EC2"
+resource "aws_autoscaling_group" "MyWPReaderNodesASGroup" {
+  #name                      = "${var.vpc_name}auto_scaling"
+  # We want this to explicitly depend on the launch config above
+  depends_on = [aws_launch_configuration.MyWPLC]
+  max_size                  = 2
   min_size                  = 1
-  max_size                  = 3
+  health_check_grace_period = 60
+  health_check_type         = "EC2"
   desired_capacity          = 1
-  wait_for_capacity_timeout = 0
-  user_data                 = data.template_file.init.rendered
-  key_name                  = aws_key_pair.ec2key.key_name
+  force_delete              = true
+  launch_configuration      = aws_launch_configuration.MyWPLC.id
+  load_balancers  = [module.elb_http.this_elb_id]
+  vpc_zone_identifier       = [module.vpc.public_subnets[0]]
 
   tags = [
     {
@@ -143,7 +141,9 @@ module "auto_scaling" {
     }
   ]
 
+
 }
+
 
 module "elb_http" {
   source  = "terraform-aws-modules/elb/aws"
@@ -166,18 +166,36 @@ module "elb_http" {
 
   health_check = {
     target              = "HTTP:80/"
-    interval            = 300
+    interval            = 60
     healthy_threshold   = 2
     unhealthy_threshold = 5
-    timeout             = 60
+    timeout             = 30
   }
-  
 
 }
 
+
+
+
+resource "aws_lb_target_group" "MyWPInstancesTG" {
+  name     = "tf-example-lb-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = module.vpc.vpc_id
+}
+
+/*resource "aws_lb_target_group_attachment" "MyWPInstancesTG" {
+  target_group_arn = aws_lb_target_group.MyWPInstancesTG.arn
+  port             = 80
+  target_id        = [module.elb_http.this_elb_id]
+  depends_on = [module.elb_http]
+}*/
+
+
 resource "aws_autoscaling_attachment" "asg_attachment_bar" {
-  autoscaling_group_name = module.auto_scaling.this_autoscaling_group_id
-  elb                    = module.elb_http.this_elb_id
+  autoscaling_group_name = aws_autoscaling_group.MyWPReaderNodesASGroup.id
+  alb_target_group_arn   = aws_lb_target_group.MyWPInstancesTG.arn
+# elb                    = module.elb_http.this_elb_id
 }
 
 
